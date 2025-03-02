@@ -25,7 +25,7 @@ def setup_database():
         )
     ''')
 
-    # Создание таблицы для хранения информации о дате изменения анекдота
+    # Создание таблицы для хранения информации о дате последнего изменения анекдота
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS joke_day (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -55,29 +55,17 @@ def setup_database():
 
     conn.close()
 
-def get_daily_joke():
-    """Возвращает анекдот дня и обновляет его, если дата изменилась."""
+def get_random_joke():
+    """Возвращает случайный анекдот из базы данных."""
     conn = sqlite3.connect(DB_NAME)
     cursor = conn.cursor()
 
-    cursor.execute("SELECT last_joke_id, last_change_date FROM joke_day")
-    last_joke_id, last_change_date = cursor.fetchone()
-
-    today = datetime.now().strftime('%Y-%m-%d')
-
-    # Если дата изменилась, выбираем новый анекдот
-    if last_change_date != today:
-        new_joke_id = random.randint(1, 100)  # Или просто выбираем случайный ID
-        cursor.execute("UPDATE joke_day SET last_joke_id = ?, last_change_date = ?", (new_joke_id, today))
-        conn.commit()
-        last_joke_id = new_joke_id
-
-    # Получаем текст анекдота для текущего дня
-    cursor.execute("SELECT text FROM jokes WHERE id = ?", (last_joke_id,))
+    # Выбираем случайный анекдот
+    cursor.execute("SELECT text FROM jokes ORDER BY RANDOM() LIMIT 1")
     joke = cursor.fetchone()
 
     conn.close()
-    return joke[0] if joke else "Анекдотов пока нет!"
+    return joke[0] if joke else "Извините, анекдоты закончились."
 
 def generate_voice_message(joke_text):
     """Генерирует голосовое сообщение и сохраняет его в аудиофайл."""
